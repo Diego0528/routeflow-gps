@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <title>RouteFlow GPS - Antigua Guatemala</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: sans-serif; background: #1a1a2e; }
+        #map { width: 100%; height: 100vh; }
+
+        /* Estilos para los íconos personalizados */
+        .icono-bodega {
+            background: #e74c3c;
+            border: 3px solid #c0392b;
+            border-radius: 50% 50% 50% 0;
+            width: 28px; height: 28px;
+            transform: rotate(-45deg);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .icono-cliente {
+            background: #3498db;
+            border: 3px solid #2980b9;
+            border-radius: 50%;
+            width: 22px; height: 22px;
+        }
+        .icono-vehiculo {
+            background: #2ecc71;
+            border: 3px solid #27ae60;
+            border-radius: 50%;
+            width: 20px; height: 20px;
+            animation: pulsar 1s infinite alternate;
+        }
+        @keyframes pulsar {
+            from { transform: scale(1); box-shadow: 0 0 0 0 rgba(46,204,113,0.4); }
+            to   { transform: scale(1.3); box-shadow: 0 0 0 8px rgba(46,204,113,0); }
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+    // ─── Estado global del mapa ───────────────────────────────────────────────
+    var mapa = null;
+    var marcadores = {};      // id ciudad → marcador Leaflet
+    var lineasRuta = [];      // polilíneas dibujadas actualmente
+    var marcadorVehiculo = null;
+
+    // ─── Inicialización ───────────────────────────────────────────────────────
+    function inicializarMapa(lat, lon, zoom) {
+        if (mapa) { mapa.remove(); }
+        mapa = L.map('map').setView([lat, lon], zoom);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors | RouteFlow GPS',
+            maxZoom: 19
+        }).addTo(mapa);
+    }
+
+    // ─── Marcadores ──────────────────────────────────────────────────────────
+
+    function agregarMarcador(id, nombre, lat, lon, tipo) {
+        if (marcadores[id]) {
+            mapa.removeLayer(marcadores[id]);
+        }
+
+        var icono = crearIcono(tipo);
+        var marcador = L.marker([lat, lon], { icon: icono }).addTo(mapa);
+        marcador.bindPopup('<b>' + nombre + '</b><br><small>ID: ' + id + '</small>');
+
+        if (tipo === 'bodega') {
+            marcador.bindTooltip(nombre, { permanent: true, direction: 'right',
+                className: 'tooltip-bodega' });
+        }
+
+        marcadores[id] = marcador;
+    }
+
+    function crearIcono(tipo) {
+        var cssClass = 'icono-cliente';
+        if (tipo === 'bodega')   cssClass = 'icono-bodega';
+        if (tipo === 'vehiculo') cssClass = 'icono-vehiculo';
+
+        return L.divIcon({
+            className: '',
+            html: '<div class="' + cssClass + '"></div>',
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+            popupAnchor: [0, -14]
+        });
+    }
+
+    // ─── Rutas ───────────────────────────────────────────────────────────────
+
+    /**
+     * Dibuja una polilínea en el mapa.
+     * puntosJson: JSON string con array de {lat, lon}
+     */
+    function dibujarRuta(puntosJson, color) {
+        try {
+            var puntos = JSON.parse(puntosJson);
+            var latLngs = puntos.map(function(p) { return [p.lat, p.lon]; });
+            var linea = L.polyline(latLngs, {
+                color: color || '#3498db',
+                weight: 5,
+                opacity: 0.85,
+                smoothFactor: 1
+            }).addTo(mapa);
+            lineasRuta.push(linea);
+            // Ajustar la vista para mostrar la ruta completa
+            mapa.fitBounds(linea.getBounds(), { padding: [30, 30] });
+        } catch(e) {
+            console.error('Error al dibujar ruta:', e);
+        }
+    }
+
+    function limpiarMapa() {
+        lineasRuta.forEach(function(l) { mapa.removeLayer(l); });
+        lineasRuta = [];
+        if (marcadorVehiculo) {
+            mapa.removeLayer(marcadorVehiculo);
+            marcadorVehiculo = null;
+        }
+    }
+
+    // ─── Vehículo animado ────────────────────────────────────────────────────
+
+    function moverVehiculo(lat, lon) {
+        if (!marcadorVehiculo) {
+            marcadorVehiculo = L.marker([lat, lon], {
+                icon: crearIcono('vehiculo'),
+                zIndexOffset: 1000
+            }).addTo(mapa);
+        } else {
+            marcadorVehiculo.setLatLng([lat, lon]);
+        }
+        mapa.panTo([lat, lon], { animate: true, duration: 0.8 });
+    }
+
+    function mostrarPopup(id, mensaje) {
+        if (marcadores[id]) {
+            marcadores[id].bindPopup(mensaje).openPopup();
+        }
+    }
+
+    // ─── Auto-inicialización al cargar ───────────────────────────────────────
+    window.onload = function() {
+        inicializarMapa(14.5586, -90.7295, 12);
+    };
+</script>
+</body>
+</html>

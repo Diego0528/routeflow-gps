@@ -1,0 +1,27 @@
+# RouteFlow GPS - Mapa de Antigua Guatemala y alrededores
+# Formato: CIUDAD|id|nombre|latitud|longitud|esBodega
+# Formato: RUTA|idOrigen|idDestino|bidireccional
+# Las distancias se recalculan automáticamente con Haversine al cargar
+
+CIUDAD|GT001|Antigua Guatemala Centro|14.5586|-90.7295|true
+CIUDAD|GT002|Ciudad Vieja|14.5224|-90.7631|false
+CIUDAD|GT003|San Miguel Dueñas|14.4943|-90.7823|false
+CIUDAD|GT004|Alotenango|14.4729|-90.7946|false
+CIUDAD|GT005|San Antonio Aguas Calientes|14.5398|-90.7606|false
+CIUDAD|GT006|Santa Catarina Barahona|14.5320|-90.7481|false
+CIUDAD|GT007|Jocotenango|14.5713|-90.7367|false
+CIUDAD|GT008|San Felipe de Jesus|14.5801|-90.7429|false
+CIUDAD|GT009|Santiago Sacatepéquez|14.6244|-90.6648|false
+CIUDAD|GT010|San Lucas Sacatepéquez|14.6108|-90.6556|false
+
+RUTA|GT001|GT002|true
+RUTA|GT001|GT006|true
+RUTA|GT001|GT007|true
+RUTA|GT002|GT003|true
+RUTA|GT002|GT005|true
+RUTA|GT003|GT004|true
+RUTA|GT005|GT006|true
+RUTA|GT007|GT008|true
+RUTA|GT008|GT009|true
+RUTA|GT009|GT010|true
+RUTA|GT010|GT001|true
