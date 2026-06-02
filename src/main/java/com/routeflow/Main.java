@@ -5,12 +5,8 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-/**
- * Punto de entrada de la aplicación JavaFX.
- *
- * JavaFX requiere que el hilo principal sea el "Application Thread".
- * launch() se encarga de inicializarlo correctamente.
- */
+import java.net.URL;
+
 public class Main extends Application {
 
     @Override
@@ -23,11 +19,14 @@ public class Main extends Application {
 
 
                 new MainWindow(stage);
-        Scene escena = new Scene(ventana, 1100, 700);
+        Scene escena = new Scene(ventana, 1200, 760);
+
+        URL css = Main.class.getResource("/com/routeflow/style.css");
+        if (css != null) escena.getStylesheets().add(css.toExternalForm());
 
         stage.setTitle("RouteFlow GPS — Antigua Guatemala");
-        stage.setMinWidth(800);
-        stage.setMinHeight(500);
+        stage.setMinWidth(900);
+        stage.setMinHeight(600);
         stage.setScene(escena);
         stage.show();
     }

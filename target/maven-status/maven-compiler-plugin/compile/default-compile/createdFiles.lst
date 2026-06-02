@@ -1,11 +1,15 @@
+com\routeflow\model\Ruta$TipoCamino.class
 com\routeflow\algorithm\Dijkstra.class
 com\routeflow\Main.class
 com\routeflow\algorithm\FloydWarshall$MatrizDistancias.class
 com\routeflow\ui\MapView.class
 com\routeflow\algorithm\FloydWarshall.class
 com\routeflow\model\Grafo.class
+com\routeflow\ui\MainWindow$3.class
 com\routeflow\algorithm\Haversine.class
+com\routeflow\ui\MainWindow$1.class
 com\routeflow\data\DataManager.class
+com\routeflow\ui\MainWindow$2.class
 com\routeflow\algorithm\Dijkstra$NodoPrioridad.class
 com\routeflow\model\Ciudad.class
 com\routeflow\model\Ruta.class

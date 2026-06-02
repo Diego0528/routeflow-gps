@@ -1,152 +1,350 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8"/>
-    <title>RouteFlow GPS - Antigua Guatemala</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: sans-serif; background: #1a1a2e; }
-        #map { width: 100%; height: 100vh; }
+<meta charset="UTF-8"/>
+<title>RouteFlow GPS</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',sans-serif; background:#0d1117; }
+#map { width:100%; height:100vh; }
 
-        /* Estilos para los íconos personalizados */
-        .icono-bodega {
-            background: #e74c3c;
-            border: 3px solid #c0392b;
-            border-radius: 50% 50% 50% 0;
-            width: 28px; height: 28px;
-            transform: rotate(-45deg);
-            display: flex; align-items: center; justify-content: center;
-        }
-        .icono-cliente {
-            background: #3498db;
-            border: 3px solid #2980b9;
-            border-radius: 50%;
-            width: 22px; height: 22px;
-        }
-        .icono-vehiculo {
-            background: #2ecc71;
-            border: 3px solid #27ae60;
-            border-radius: 50%;
-            width: 20px; height: 20px;
-            animation: pulsar 1s infinite alternate;
-        }
-        @keyframes pulsar {
-            from { transform: scale(1); box-shadow: 0 0 0 0 rgba(46,204,113,0.4); }
-            to   { transform: scale(1.3); box-shadow: 0 0 0 8px rgba(46,204,113,0); }
-        }
-    </style>
+/* ── Info panel ─────────────────────────────────────────── */
+#infopanel {
+  display:none;
+  position:fixed; right:12px; top:12px;
+  width:270px;
+  background:rgba(13,17,23,0.95);
+  border:1px solid #30363d;
+  border-radius:10px;
+  color:#e6edf3;
+  font-size:13px;
+  z-index:1000;
+  box-shadow:0 8px 32px rgba(0,0,0,0.7);
+  backdrop-filter:blur(6px);
+}
+#panel-header {
+  background:linear-gradient(135deg,#1f6feb,#1a56d6);
+  padding:10px 14px;
+  border-radius:9px 9px 0 0;
+  display:flex; justify-content:space-between; align-items:center;
+}
+#panel-titulo { font-weight:700; font-size:13px; letter-spacing:0.3px; }
+#panel-cerrar { cursor:pointer; opacity:0.75; font-size:18px; line-height:1; }
+#panel-cerrar:hover { opacity:1; }
+#panel-body { padding:10px 14px; }
+.info-row { display:flex; justify-content:space-between; margin:6px 0; align-items:center; }
+.info-lbl { color:#7d8590; font-size:12px; }
+.info-val { color:#e6edf3; font-weight:700; font-size:13px; }
+#panel-pasos {
+  margin-top:8px; max-height:180px; overflow-y:auto;
+  border-top:1px solid #21262d; padding-top:8px;
+}
+.paso { font-size:11px; padding:4px 0; color:#8b949e; border-bottom:1px solid #161b22; }
+.paso:last-child { border-bottom:none; }
+
+/* ── Tooltips ───────────────────────────────────────────── */
+.leaflet-tooltip {
+  background:rgba(13,17,23,0.92) !important;
+  color:#e6edf3 !important;
+  border:1px solid #30363d !important;
+  border-radius:5px !important;
+  font-size:11px !important;
+  padding:4px 8px !important;
+  font-family:'Segoe UI',sans-serif !important;
+  box-shadow:0 3px 10px rgba(0,0,0,0.5) !important;
+}
+.leaflet-tooltip-bodega {
+  background:rgba(180,20,20,0.92) !important;
+  border-color:#ef5350 !important;
+  font-weight:700 !important;
+  color:#fff !important;
+}
+
+/* ── Popups oscuros ─────────────────────────────────────── */
+.leaflet-popup-content-wrapper {
+  background:rgba(13,17,23,0.97) !important;
+  border:1px solid #30363d !important;
+  border-radius:8px !important;
+  color:#e6edf3 !important;
+  box-shadow:0 6px 24px rgba(0,0,0,0.7) !important;
+}
+.leaflet-popup-tip-container .leaflet-popup-tip {
+  background:rgba(13,17,23,0.97) !important;
+}
+.leaflet-popup-close-button { color:#7d8590 !important; }
+.leaflet-popup-close-button:hover { color:#e6edf3 !important; }
+
+/* ── Marcadores de nodos ────────────────────────────────── */
+.m-bodega {
+  background:#dc2626;
+  border:3px solid #fff;
+  border-radius:50% 50% 50% 0;
+  transform:rotate(-45deg);
+  width:22px; height:22px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.5), 0 0 0 3px rgba(220,38,38,0.25);
+}
+.m-cliente {
+  background:#2563eb;
+  border:2.5px solid #93c5fd;
+  border-radius:50%;
+  width:13px; height:13px;
+  box-shadow:0 0 0 3px rgba(37,99,235,0.22), 0 2px 6px rgba(0,0,0,0.4);
+  transition:transform 0.15s;
+}
+.m-cliente:hover { transform:scale(1.5); }
+</style>
 </head>
 <body>
 <div id="map"></div>
+<div id="infopanel">
+  <div id="panel-header">
+    <span id="panel-titulo">Ruta calculada</span>
+    <span id="panel-cerrar" onclick="document.getElementById('infopanel').style.display='none'">✕</span>
+  </div>
+  <div id="panel-body">
+    <div class="info-row"><span class="info-lbl">Distancia</span><span class="info-val" id="v-dist">—</span></div>
+    <div class="info-row"><span class="info-lbl">Tiempo est.</span><span class="info-val" id="v-tiempo">—</span></div>
+    <div class="info-row"><span class="info-lbl">Hora simulada</span><span class="info-val" id="v-hora">—</span></div>
+    <div class="info-row"><span class="info-lbl">Paradas</span><span class="info-val" id="v-paradas">—</span></div>
+    <div id="panel-pasos"></div>
+  </div>
+</div>
+
 <script>
-    // ─── Estado global del mapa ───────────────────────────────────────────────
-    var mapa = null;
-    var marcadores = {};      // id ciudad → marcador Leaflet
-    var lineasRuta = [];      // polilíneas dibujadas actualmente
-    var marcadorVehiculo = null;
+var mapa           = null;
+var marcadores     = {};
+var aristasLines   = [];
+var rutaLines      = [];
+var mVehiculo      = null;
+var animTimer      = null;
+var estiloRutaActual = 'solido';
 
-    // ─── Inicialización ───────────────────────────────────────────────────────
-    function inicializarMapa(lat, lon, zoom) {
-        if (mapa) { mapa.remove(); }
-        mapa = L.map('map').setView([lat, lon], zoom);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors | RouteFlow GPS',
-            maxZoom: 19
-        }).addTo(mapa);
+/* ── Inicialización ─────────────────────────────────────── */
+function inicializarMapa(lat, lon, zoom) {
+  if (mapa) { mapa.remove(); mapa = null; }
+  mapa = L.map('map', { zoomControl:true, attributionControl:true })
+           .setView([lat, lon], zoom || 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · RouteFlow GPS',
+    maxZoom:19
+  }).addTo(mapa);
+}
+
+/* ── Marcadores de ciudades ─────────────────────────────── */
+function crearIcono(tipo) {
+  if (tipo === 'bodega') {
+    return L.divIcon({ className:'', html:'<div class="m-bodega"></div>',
+      iconSize:[22,22], iconAnchor:[11,22], popupAnchor:[0,-24] });
+  }
+  return L.divIcon({ className:'', html:'<div class="m-cliente"></div>',
+    iconSize:[13,13], iconAnchor:[6,6], popupAnchor:[0,-8] });
+}
+
+function agregarMarcador(id, nombre, lat, lon, tipo) {
+  if (marcadores[id]) mapa.removeLayer(marcadores[id]);
+  var m = L.marker([lat,lon], {icon:crearIcono(tipo)}).addTo(mapa);
+  m.bindPopup(
+    '<div style="font-family:Segoe UI,sans-serif;min-width:140px;padding:2px 0">'
+    + '<b style="font-size:13px;color:#e6edf3">' + nombre + '</b>'
+    + '<br><span style="color:#58a6ff;font-size:11px">ID: ' + id + '</span>'
+    + (tipo==='bodega' ? '<br><span style="color:#f87171;font-size:10px;font-weight:600">🏪 BODEGA / ORIGEN</span>' : '')
+    + '</div>'
+  );
+  var tOpts = {direction:'right', offset:[8,0]};
+  if (tipo==='bodega') { tOpts.permanent=true; tOpts.className='leaflet-tooltip-bodega'; }
+  m.bindTooltip(nombre, tOpts);
+  marcadores[id] = m;
+}
+
+/* ── Aristas del grafo — estilo carretera ───────────────── */
+function dibujarAristas(json) {
+  aristasLines.forEach(function(l){ mapa.removeLayer(l); });
+  aristasLines = [];
+  try {
+    JSON.parse(json).forEach(function(a) {
+      var pts = [[a.lat1,a.lon1],[a.lat2,a.lon2]];
+      /* Capa exterior — pavimento */
+      var casing = L.polyline(pts, {
+        color:'#3d4f66', weight:5, opacity:0.65,
+        lineJoin:'round', lineCap:'round'
+      }).addTo(mapa);
+      /* Capa interior — franja central */
+      var center = L.polyline(pts, {
+        color:'#8ba3bc', weight:1.5, opacity:0.45,
+        dashArray:'10 6', lineJoin:'round', lineCap:'round'
+      }).addTo(mapa);
+      if (a.km) {
+        var tipoStr = a.tipo ? a.tipo.charAt(0) + a.tipo.slice(1).toLowerCase() : '';
+        casing.bindTooltip(a.km.toFixed(2) + ' km · ' + tipoStr,
+          {sticky:true, direction:'top', offset:[0,-4]});
+      }
+      aristasLines.push(casing, center);
+    });
+  } catch(e) { console.error('dibujarAristas:', e); }
+}
+
+/* ── Ruta calculada ─────────────────────────────────────── */
+function dibujarRuta(json, color, titulo) {
+  rutaLines.forEach(function(l){ mapa.removeLayer(l); });
+  rutaLines = [];
+  try {
+    var pts = JSON.parse(json);
+    if (pts.length < 2) return;
+    var ll = pts.map(function(p){ return [p.lat, p.lon]; });
+    var col     = color || '#1f6feb';
+    var punteado = (estiloRutaActual === 'punteado');
+    var sombra = L.polyline(ll, {
+      color:'rgba(0,0,0,0.35)', weight:12, opacity:0.5,
+      lineJoin:'round', lineCap:'round'
+    }).addTo(mapa);
+    var mainOpts = {color:col, weight:7, opacity:0.92, lineJoin:'round', lineCap:'round'};
+    if (punteado) { mainOpts.dashArray = '14 8'; }
+    var main = L.polyline(ll, mainOpts).addTo(mapa);
+    rutaLines.push(sombra, main);
+    if (!punteado) {
+      var shine = L.polyline(ll, {
+        color:'rgba(255,255,255,0.28)', weight:2, opacity:0.9,
+        lineJoin:'round', lineCap:'round'
+      }).addTo(mapa);
+      rutaLines.push(shine);
     }
+    mapa.fitBounds(main.getBounds(), {padding:[60,60]});
+    if (titulo) document.getElementById('panel-titulo').textContent = titulo;
+  } catch(e) { console.error('dibujarRuta:', e); }
+}
 
-    // ─── Marcadores ──────────────────────────────────────────────────────────
+function limpiarRuta() {
+  rutaLines.forEach(function(l){ mapa.removeLayer(l); });
+  rutaLines = [];
+  if (mVehiculo) { mapa.removeLayer(mVehiculo); mVehiculo = null; }
+  if (animTimer) { clearInterval(animTimer); animTimer = null; }
+  document.getElementById('infopanel').style.display = 'none';
+}
 
-    function agregarMarcador(id, nombre, lat, lon, tipo) {
-        if (marcadores[id]) {
-            mapa.removeLayer(marcadores[id]);
-        }
+function limpiarMapa() {
+  limpiarRuta();
+  aristasLines.forEach(function(l){ mapa.removeLayer(l); });
+  aristasLines = [];
+  Object.keys(marcadores).forEach(function(k){ mapa.removeLayer(marcadores[k]); });
+  marcadores = {};
+}
 
-        var icono = crearIcono(tipo);
-        var marcador = L.marker([lat, lon], { icon: icono }).addTo(mapa);
-        marcador.bindPopup('<b>' + nombre + '</b><br><small>ID: ' + id + '</small>');
+/* ── Vehículo — carro SVG con rotación ──────────────────── */
 
-        if (tipo === 'bodega') {
-            marcador.bindTooltip(nombre, { permanent: true, direction: 'right',
-                className: 'tooltip-bodega' });
-        }
+/* Calcula el rumbo en grados (0=Norte, 90=Este) entre dos puntos WGS84 */
+function calcularRumbo(lat1, lon1, lat2, lon2) {
+  var dLon = (lon2 - lon1) * Math.PI / 180;
+  var la1  = lat1 * Math.PI / 180;
+  var la2  = lat2 * Math.PI / 180;
+  var y = Math.sin(dLon) * Math.cos(la2);
+  var x = Math.cos(la1)  * Math.sin(la2) - Math.sin(la1) * Math.cos(la2) * Math.cos(dLon);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
 
-        marcadores[id] = marcador;
-    }
+/* Genera un icono de carro SVG (vista lateral apuntando a la derecha).
+   color: color de la carrocería
+   rotCss: grados para rotate() CSS (rumbo - 90 para apuntar al norte = 0°) */
+function crearIconoCarro(color, rotCss) {
+  var c   = color  || '#2563eb';
+  var rot = rotCss || 0;
+  var svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="18" viewBox="0 0 34 18">'
+    /* carrocería */
+    + '<rect x="2" y="7" width="30" height="9" rx="2.5" fill="' + c + '"/>'
+    /* cabina */
+    + '<path d="M8 7 L11 2 L24 2 L27 7 Z" fill="' + c + '"/>'
+    /* parabrisas delantero */
+    + '<path d="M23.5 7 L21.5 3 L17 3 L17 7 Z" fill="rgba(200,235,255,0.72)"/>'
+    /* parabrisas trasero */
+    + '<path d="M10.5 7 L12 3 L17 3 L17 7 Z" fill="rgba(200,235,255,0.72)"/>'
+    /* faros delanteros */
+    + '<rect x="30" y="8" width="3" height="4" rx="1.5" fill="#fef9c3"/>'
+    /* luces traseras */
+    + '<rect x="1" y="8" width="3" height="4" rx="1.5" fill="#ef4444"/>'
+    /* rueda trasera */
+    + '<circle cx="9"  cy="16" r="3.2" fill="#1e293b"/>'
+    + '<circle cx="9"  cy="16" r="1.6" fill="#475569"/>'
+    /* rueda delantera */
+    + '<circle cx="25" cy="16" r="3.2" fill="#1e293b"/>'
+    + '<circle cx="25" cy="16" r="1.6" fill="#475569"/>'
+    + '</svg>';
+  return L.divIcon({
+    className: '',
+    html: '<div style="transform:rotate('+rot+'deg);transform-origin:center center;'
+        + 'filter:drop-shadow(0 2px 5px rgba(0,0,0,0.6));transition:transform 0.15s">'
+        + svg + '</div>',
+    iconSize:   [34, 18],
+    iconAnchor: [17,  9],
+    popupAnchor:[0, -10]
+  });
+}
 
-    function crearIcono(tipo) {
-        var cssClass = 'icono-cliente';
-        if (tipo === 'bodega')   cssClass = 'icono-bodega';
-        if (tipo === 'vehiculo') cssClass = 'icono-vehiculo';
-
-        return L.divIcon({
-            className: '',
-            html: '<div class="' + cssClass + '"></div>',
-            iconSize: [28, 28],
-            iconAnchor: [14, 14],
-            popupAnchor: [0, -14]
+function animarVehiculo(json, msStep, colorCarro) {
+  if (animTimer) { clearInterval(animTimer); animTimer = null; }
+  if (mVehiculo) { mapa.removeLayer(mVehiculo); mVehiculo = null; }
+  var col   = colorCarro || '#2563eb';
+  var PASOS = 8;
+  try {
+    var camino = JSON.parse(json);
+    if (camino.length < 2) return;
+    /* Expandir el camino interpolando PASOS sub-puntos entre cada par de nodos */
+    var ruta = [];
+    for (var i = 0; i < camino.length - 1; i++) {
+      for (var j = 0; j < PASOS; j++) {
+        var t = j / PASOS;
+        ruta.push({
+          lat: camino[i].lat + (camino[i+1].lat - camino[i].lat) * t,
+          lon: camino[i].lon + (camino[i+1].lon - camino[i].lon) * t
         });
+      }
     }
+    ruta.push(camino[camino.length - 1]);
+    var idx      = 0;
+    var intervalo = Math.max(40, (msStep || 900) / PASOS);
+    animTimer = setInterval(function() {
+      if (idx >= ruta.length) { clearInterval(animTimer); animTimer = null; return; }
+      var pt  = ruta[idx];
+      var rot = 0;
+      if (idx < ruta.length - 1) {
+        var sig = ruta[idx + 1];
+        rot = calcularRumbo(pt.lat, pt.lon, sig.lat, sig.lon) - 90;
+      } else if (idx > 0) {
+        var ant = ruta[idx - 1];
+        rot = calcularRumbo(ant.lat, ant.lon, pt.lat, pt.lon) - 90;
+      }
+      var icono = crearIconoCarro(col, rot);
+      if (!mVehiculo) {
+        mVehiculo = L.marker([pt.lat, pt.lon], {icon:icono, zIndexOffset:1000}).addTo(mapa);
+      } else {
+        mVehiculo.setLatLng([pt.lat, pt.lon]);
+        mVehiculo.setIcon(icono);
+      }
+      idx++;
+    }, intervalo);
+  } catch(e) { console.error('animarVehiculo:', e); }
+}
 
-    // ─── Rutas ───────────────────────────────────────────────────────────────
+/* ── Panel de información ───────────────────────────────── */
+function mostrarInfoRuta(distKm, tiempoMin, hora, paradas, pasosJson) {
+  document.getElementById('v-dist').textContent    = distKm.toFixed(2) + ' km';
+  document.getElementById('v-tiempo').textContent  = tiempoMin.toFixed(0) + ' min';
+  document.getElementById('v-hora').textContent    = hora + ':00 h';
+  document.getElementById('v-paradas').textContent = paradas;
+  try {
+    var pasos = JSON.parse(pasosJson);
+    document.getElementById('panel-pasos').innerHTML =
+      pasos.map(function(p, i){ return '<div class="paso">' + (i+1) + '. ' + p + '</div>'; }).join('');
+  } catch(e) {}
+  document.getElementById('infopanel').style.display = 'block';
+}
 
-    /**
-     * Dibuja una polilínea en el mapa.
-     * puntosJson: JSON string con array de {lat, lon}
-     */
-    function dibujarRuta(puntosJson, color) {
-        try {
-            var puntos = JSON.parse(puntosJson);
-            var latLngs = puntos.map(function(p) { return [p.lat, p.lon]; });
-            var linea = L.polyline(latLngs, {
-                color: color || '#3498db',
-                weight: 5,
-                opacity: 0.85,
-                smoothFactor: 1
-            }).addTo(mapa);
-            lineasRuta.push(linea);
-            // Ajustar la vista para mostrar la ruta completa
-            mapa.fitBounds(linea.getBounds(), { padding: [30, 30] });
-        } catch(e) {
-            console.error('Error al dibujar ruta:', e);
-        }
-    }
+/* ── Preferencias visuales ──────────────────────────────── */
+function setEstiloRuta(estilo) { estiloRutaActual = estilo; }
 
-    function limpiarMapa() {
-        lineasRuta.forEach(function(l) { mapa.removeLayer(l); });
-        lineasRuta = [];
-        if (marcadorVehiculo) {
-            mapa.removeLayer(marcadorVehiculo);
-            marcadorVehiculo = null;
-        }
-    }
-
-    // ─── Vehículo animado ────────────────────────────────────────────────────
-
-    function moverVehiculo(lat, lon) {
-        if (!marcadorVehiculo) {
-            marcadorVehiculo = L.marker([lat, lon], {
-                icon: crearIcono('vehiculo'),
-                zIndexOffset: 1000
-            }).addTo(mapa);
-        } else {
-            marcadorVehiculo.setLatLng([lat, lon]);
-        }
-        mapa.panTo([lat, lon], { animate: true, duration: 0.8 });
-    }
-
-    function mostrarPopup(id, mensaje) {
-        if (marcadores[id]) {
-            marcadores[id].bindPopup(mensaje).openPopup();
-        }
-    }
-
-    // ─── Auto-inicialización al cargar ───────────────────────────────────────
-    window.onload = function() {
-        inicializarMapa(14.5586, -90.7295, 12);
-    };
+/* ── Auto-init ──────────────────────────────────────────── */
+window.onload = function() { inicializarMapa(14.5586, -90.7295, 13); };
 </script>
 </body>
 </html>

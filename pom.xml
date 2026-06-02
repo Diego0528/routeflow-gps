@@ -13,7 +13,7 @@
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javafx.version>21.0.5</javafx.version>
+        <javafx.version>25.0.1</javafx.version>
     </properties>
 
     <dependencies>
@@ -27,15 +27,19 @@
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
         </dependency>
-        <!-- javafx-web (WebView + Leaflet) requiere jdk.jsobject que fue
-             eliminado en JDK 25+. Usar MapView Canvas en su lugar.
-             Descomentar esta dependencia si se instala JDK 21:
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-web</artifactId>
             <version>${javafx.version}</version>
         </dependency>
-        -->
+        <!-- jdk-jsobject: necesario en JDK 25+ donde fue eliminado del JDK.
+             El POM de javafx-web omite el classifier de plataforma, forzamos win. -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>jdk-jsobject</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>win</classifier>
+        </dependency>
     </dependencies>
 
     <build>
